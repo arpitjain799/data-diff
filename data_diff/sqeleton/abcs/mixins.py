@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from .database_types import TemporalType, FractionalType, ColType_UUID, Boolean, ColType, String_UUID
+from .database_types import Array, Struct, TemporalType, FractionalType, ColType_UUID, Boolean, ColType, String_UUID
 from .compiler import Compilable
 
 
@@ -8,6 +8,11 @@ class AbstractMixin(ABC):
 
 
 class AbstractMixin_NormalizeValue(AbstractMixin):
+
+    @abstractmethod
+    def to_comparable(self, value: str, coltype: ColType) -> str:
+        """Ensure that the expression is comparable in ``IS DISTINCT FROM``."""
+
     @abstractmethod
     def normalize_timestamp(self, value: str, coltype: TemporalType) -> str:
         """Creates an SQL expression, that converts 'value' to a normalized timestamp.
@@ -43,6 +48,14 @@ class AbstractMixin_NormalizeValue(AbstractMixin):
         """Creates an SQL expression, that converts 'value' to either '0' or '1'."""
         return self.to_string(value)
 
+    def normalize_array(self, value: str, _coltype: Array) -> str:
+        """Creates an SQL expression, that serialized an array into a JSON string."""
+        return self.to_string(value)
+
+    def normalize_struct(self, value: str, _coltype: Struct) -> str:
+        """Creates an SQL expression, that serialized a struct into a JSON string."""
+        return self.to_string(value)
+
     def normalize_uuid(self, value: str, coltype: ColType_UUID) -> str:
         """Creates an SQL expression, that strips uuids of artifacts like whitespace."""
         if isinstance(coltype, String_UUID):
@@ -73,6 +86,10 @@ class AbstractMixin_NormalizeValue(AbstractMixin):
             return self.normalize_uuid(value, coltype)
         elif isinstance(coltype, Boolean):
             return self.normalize_boolean(value, coltype)
+        elif isinstance(coltype, Array):
+            return self.normalize_array(value, coltype)
+        elif isinstance(coltype, Struct):
+            return self.normalize_struct(value, coltype)
         return self.to_string(value)
 
 

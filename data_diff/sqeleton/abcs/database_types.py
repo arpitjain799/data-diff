@@ -13,6 +13,7 @@ DbKey = Union[int, str, bytes, ArithUUID, ArithAlphanumeric]
 DbTime = datetime
 
 
+@dataclass
 class ColType:
     supported = True
 
@@ -144,6 +145,18 @@ class Integer(NumericType, IKey):
 
 
 @dataclass
+class Array(ColType):
+    item_type: ColType
+
+
+@dataclass
+class Struct(ColType):
+    # TODO: Later, add the exact definition of the struct so that we could hash & compare individual fields.
+    #   Meanwhile, we rely on JSON comparison, so the internal structure does not matter.
+    pass
+
+
+@dataclass
 class UnknownColType(ColType):
     text: str
 
@@ -220,6 +233,10 @@ class AbstractDialect(ABC):
         numeric_scale: int = None,
     ) -> ColType:
         "Parse type info as returned by the database"
+
+    @abstractmethod
+    def to_comparable(self, value: str, coltype: ColType) -> str:
+        """Ensure that the expression is comparable in ``IS DISTINCT FROM``."""
 
 
 from typing import TypeVar, Generic

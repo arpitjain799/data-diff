@@ -164,6 +164,10 @@ class BaseDialect(AbstractDialect):
         joined_exprs = ", ".join(items)
         return f"concat({joined_exprs})"
 
+    def to_comparable(self, value: str, coltype: ColType) -> str:
+        """Ensure that the expression is comparable in ``IS DISTINCT FROM``."""
+        return value
+
     def is_distinct_from(self, a: str, b: str) -> str:
         return f"{a} is distinct from {b}"
 
@@ -228,7 +232,7 @@ class BaseDialect(AbstractDialect):
         """ """
 
         cls = self._parse_type_repr(type_repr)
-        if not cls:
+        if cls is None:
             return UnknownColType(type_repr)
 
         if issubclass(cls, TemporalType):
